@@ -2,12 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
+use Illuminate\Http\Response;
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\UpdateOrderRequest;
-use App\Models\Order;
+use App\Interfaces\OrderRepositoryInterface;
 
 class OrderController extends Controller
 {
+    private OrderRepositoryInterface $orderRepository;
+
+    public function __construct(OrderRepositoryInterface $orderRepository)
+    {
+        $this->orderRepository = $orderRepository;
+    }
     /**
      * Display a listing of the resource.
      *
@@ -15,7 +23,9 @@ class OrderController extends Controller
      */
     public function index()
     {
-        //
+        return response()->json([
+            'data' => $this->orderRepository->getAllOrders()
+        ]);
     }
 
     /**
@@ -36,7 +46,17 @@ class OrderController extends Controller
      */
     public function store(StoreOrderRequest $request)
     {
-        //
+        $orderDetails = $request->only([
+            'client',
+            'details'
+        ]);
+
+        return response()->json(
+            [
+                'data' => $this->orderRepository->createOrder($orderDetails)
+            ],
+            Response::HTTP_CREATED
+        );
     }
 
     /**
@@ -45,9 +65,13 @@ class OrderController extends Controller
      * @param  \App\Models\Order  $order
      * @return \Illuminate\Http\Response
      */
-    public function show(Order $order)
+    public function show($id)
     {
-        //
+        // $orderId = $request->route('id');
+
+        return response()->json([
+            'data' => $this->orderRepository->getOrderById($id)
+        ]);
     }
 
     /**
@@ -68,9 +92,17 @@ class OrderController extends Controller
      * @param  \App\Models\Order  $order
      * @return \Illuminate\Http\Response
      */
-    public function update(UpdateOrderRequest $request, Order $order)
+    public function update(Request $request)
     {
-        //
+        $orderId = $request->route('id');
+        $orderDetails = $request->only([
+            'client',
+            'details'
+        ]);
+
+        return response()->json([
+            'data' => $this->orderRepository->updateOrder($orderId, $orderDetails)
+        ]);
     }
 
     /**
@@ -79,8 +111,11 @@ class OrderController extends Controller
      * @param  \App\Models\Order  $order
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Order $order)
+    public function destroy(Request $request)
     {
-        //
+        $orderId = $request->route('id');
+        $this->orderRepository->deleteOrder($orderId);
+
+        return response()->json(null, Response::HTTP_NO_CONTENT);
     }
 }
